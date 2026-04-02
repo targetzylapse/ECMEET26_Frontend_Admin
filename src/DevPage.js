@@ -79,16 +79,28 @@ export default function DevPage() {
   const handleAddUser = async () => {
     if (!newAuthEmail || !newAuthEmail.includes('@')) return;
     setAddingUser(true);
+    console.log('🏗️ Adding user by email:', newAuthEmail);
     await adminAPI.addUserByEmail(newAuthEmail, newAuthRole, newAuthName, newAuthRole === 'captain' ? newAuthTeam : '').catch(() => {});
+    console.log('✅ User add request complete');
     setAddingUser(false);
     setNewAuthEmail('');
     setNewAuthName('');
     setNewAuthRole('coordinator');
-    adminAPI.getUsers().then(r => setUsers(r.data.users || []));
+    console.log('🔄 Manual/Immediate refresh triggered');
+    refreshUsers(true);
   };
 
   const refreshUsers = (force = false) => {
-    adminAPI.getUsers({ mode: 'staff' }, force).then(r => setUsers(r.data.users || [])).catch(() => {});
+    console.log(`📡 Fetching users (mode: staff, force: ${force})...`);
+    adminAPI.getUsers({ mode: 'staff' }, force)
+      .then(r => {
+        const u = r.data.users || [];
+        console.log(`📥 Received ${u.length} staff records`);
+        setUsers(u);
+      })
+      .catch(err => {
+        console.error('❌ Failed to fetch users:', err);
+      });
   };
 
   useEffect(() => {
@@ -99,7 +111,10 @@ export default function DevPage() {
 
   // Real-Time Sync Listener
   useEffect(() => {
-    const handleSync = () => refreshUsers(true);
+    const handleSync = (e) => {
+      console.log('🔔 DevPage received ecmeet_refresh_data:', e.detail);
+      refreshUsers(true);
+    };
     window.addEventListener('ecmeet_refresh_data', handleSync);
     return () => window.removeEventListener('ecmeet_refresh_data', handleSync);
   }, [unlocked]);
