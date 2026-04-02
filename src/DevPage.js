@@ -24,6 +24,7 @@ import {
   Save,
   Rocket,
   LockOpen,
+  RefreshCw,
 } from 'lucide-react';
 import { adminAPI, eventsAPI } from './api';
 import { AdminAuthContext } from './App';
@@ -86,10 +87,21 @@ export default function DevPage() {
     adminAPI.getUsers().then(r => setUsers(r.data.users || []));
   };
 
+  const refreshUsers = (force = false) => {
+    adminAPI.getUsers({ mode: 'staff' }, force).then(r => setUsers(r.data.users || [])).catch(() => {});
+  };
+
   useEffect(() => {
     if (!unlocked) return;
     eventsAPI.getAll().then(r => setEvents(r.data.events || [])).catch(() => {});
-    adminAPI.getUsers().then(r => setUsers(r.data.users || [])).catch(() => {});
+    refreshUsers();
+  }, [unlocked]);
+
+  // Real-Time Sync Listener
+  useEffect(() => {
+    const handleSync = () => refreshUsers(true);
+    window.addEventListener('ecmeet_refresh_data', handleSync);
+    return () => window.removeEventListener('ecmeet_refresh_data', handleSync);
   }, [unlocked]);
 
   const refreshEvents = () => eventsAPI.getAll().then(r => setEvents(r.data.events || [])).catch(() => {});
@@ -692,9 +704,19 @@ export default function DevPage() {
       {tab === 'roles' && (
         <div className="fade-in card table-card">
           <div className="table-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem' }}>
-            <div>
-              <h3 className="table-title">Permission Management</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Control administrative access for platform personnel.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 className="table-title">Permission Management</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Control administrative access for platform personnel.</p>
+              </div>
+              <button 
+                className="btn btn-outline" 
+                style={{ padding: '0.6rem 1rem', gap: '0.5rem', height: 'fit-content' }} 
+                onClick={() => refreshUsers(true)}
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </button>
             </div>
             
             {/* Add User Form */}
