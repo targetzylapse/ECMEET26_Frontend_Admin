@@ -27,6 +27,7 @@ export default function UsersPage({ mode = 'students' }) {
   const [loading, setLoading] = useState(true);
   const [editingRole, setEditingRole] = useState(null);
   const [newRole, setNewRole] = useState('');
+  const [newTeam, setNewTeam] = useState('Gryffindor');
   const [selectedUser, setSelectedUser] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -90,7 +91,7 @@ export default function UsersPage({ mode = 'students' }) {
   const handleRoleUpdate = async (e) => {
     e.stopPropagation(); // prevent modal from opening
     if (!editingRole || !newRole) return;
-    await adminAPI.updateRole(editingRole.userId, newRole);
+    await adminAPI.updateRole(editingRole.userId, newRole, newRole === 'captain' ? newTeam : '');
     setEditingRole(null);
     load(true); // force refresh on mutation
   };
@@ -244,6 +245,7 @@ export default function UsersPage({ mode = 'students' }) {
                     <>
                       <th>Role</th>
                       <th>Events</th>
+                      {user?.role === 'dev' && <th style={{ textAlign: 'center' }}>Actions</th>}
                     </>
                   )}
                 </tr>
@@ -316,6 +318,18 @@ export default function UsersPage({ mode = 'students' }) {
                             <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>—</span>
                           )}
                         </td>
+                        {user?.role === 'dev' && (
+                          <td style={{ textAlign: 'center' }}>
+                            <button 
+                              className="icon-btn" 
+                              style={{ color: 'var(--primary)', marginRight: '0.5rem' }} 
+                              onClick={(e) => { e.stopPropagation(); setEditingRole({ userId: u._id, role: u.role }); setNewRole(u.role); setNewTeam(u.team || 'Gryffindor'); }}
+                              title="Edit Role"
+                            >
+                              <Shield size={14} />
+                            </button>
+                          </td>
+                        )}
                       </>
                     )}
 
@@ -343,6 +357,14 @@ export default function UsersPage({ mode = 'students' }) {
                         </td>
                         {user?.role === 'dev' && (
                           <td style={{ textAlign: 'center' }}>
+                            <button 
+                              className="icon-btn" 
+                              style={{ color: 'var(--primary)', marginRight: '0.5rem' }} 
+                              onClick={(e) => { e.stopPropagation(); setEditingRole({ userId: u._id, role: u.role }); setNewRole(u.role); setNewTeam(u.team || 'Gryffindor'); }}
+                              title="Edit Role"
+                            >
+                              <Shield size={14} />
+                            </button>
                             <button 
                               className="icon-btn" 
                               style={{ color: 'var(--error)' }} 
@@ -580,6 +602,23 @@ export default function UsersPage({ mode = 'students' }) {
                 <option value="dev">Developer (Superuser)</option>
               </select>
             </div>
+
+            {newRole === 'captain' && (
+              <div style={{ marginBottom: '2rem' }}>
+                <label className="form-label">House Team</label>
+                <select 
+                  className="form-input" 
+                  value={newTeam} 
+                  onChange={e => setNewTeam(e.target.value)}
+                  style={{ appearance: 'none' }}
+                >
+                  <option value="Gryffindor">Gryffindor</option>
+                  <option value="Ravenclaw">Ravenclaw</option>
+                  <option value="Hufflepuff">Hufflepuff</option>
+                  <option value="Slytherin">Slytherin</option>
+                </select>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setEditingRole(null)}>Cancel</button>
