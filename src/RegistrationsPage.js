@@ -37,6 +37,7 @@ export default function RegistrationsPage() {
     sortBy: 'recent'
   });
   const [loading, setLoading] = useState(true);
+  const [studentsMap, setStudentsMap] = useState({});
 
   const load = (forceRefresh = false) => {
     setLoading(true);
@@ -48,7 +49,18 @@ export default function RegistrationsPage() {
            .finally(() => setLoading(false));
   };
 
-  useEffect(() => { eventsAPI.getAll().then(r => setEvents(r.data.events || [])).catch(() => {}); }, []);
+  useEffect(() => { 
+    eventsAPI.getAll().then(r => setEvents(r.data.events || [])).catch(() => {});
+    
+    // Fetch master student list to resolve "Year" for registrations
+    adminAPI.getUsers({ mode: 'students' }).then(r => {
+      const map = {};
+      (r.data.users || []).forEach(u => {
+        if (u.rrn) map[u.rrn] = { year: u.year };
+      });
+      setStudentsMap(map);
+    }).catch(() => {});
+  }, []);
   useEffect(() => { load(); }, [filterEvent]);
 
   // Real-Time Sync Listener
@@ -72,7 +84,12 @@ export default function RegistrationsPage() {
     const matchesTeam = filters.team === 'all' || r.team === filters.team;
 
     // Dept/Year filter
-    const matchesYear = filters.year === 'all' || r.department?.includes(filters.year.split(' ')[0]);
+    const student = studentsMap[r.rrn];
+    const studentYear = student?.year || '';
+    const fullClass = `${r.department} ${studentYear}`.trim();
+    
+    const matchesYear = filters.year === 'all' || 
+      (filters.year.includes(r.department) && (filters.year.includes(studentYear) || !studentYear));
 
     // Section filter
     const matchesSection = filters.section === 'all' || r.section === filters.section;
@@ -95,122 +112,135 @@ export default function RegistrationsPage() {
   return (
     <div className="fade-in">
       <div className="card table-card">
-        <div className="table-header">
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <h3 className="table-title" style={{ margin: 0 }}>Event Registrations</h3>
-            {!loading && (
-              <div style={{ 
-                background: 'rgba(59, 130, 246, 0.1)', 
-                color: '#3b82f6', 
-                padding: '0.25rem 0.75rem', 
-                borderRadius: '20px', 
-                fontSize: '0.75rem', 
-                fontWeight: 700,
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                letterSpacing: '0.02em',
-                whiteSpace: 'nowrap'
-              }}>
-                {filtered.length} Total
-              </div>
-            )}
-          </div>
-          <div className="table-actions">
-            {/* Refresh Button */}
-            <button className="btn btn-outline" style={{ padding: '0.6rem 1rem', gap: '0.5rem' }} onClick={() => load(true)} disabled={loading}>
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
+        <div className="table-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem', padding: '1.75rem 2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+              <h3 className="table-title" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Event Registrations</h3>
+              {!loading && (
+                <div style={{ 
+                  background: 'rgba(59, 130, 246, 0.12)', 
+                  color: '#60a5fa', 
+                  padding: '0.4rem 1rem', 
+                  borderRadius: '12px', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 800,
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.08)'
+                }}>
+                  {filtered.length} Total
+                </div>
+              )}
+            </div>
 
-            <div className="topbar-search-wrap" style={{ maxWidth: 280 }}>
-              <Search className="topbar-search-icon" size={16} />
-              <input 
-                className="topbar-search-input" 
-                placeholder="Search registrations..."
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
+            <div className="table-actions" style={{ gap: '0.75rem' }}>
+              <button className="btn btn-outline" style={{ padding: '0.65rem 1.25rem', height: '42px' }} onClick={() => load(true)} disabled={loading}>
+                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+
+              <div className="topbar-search-wrap" style={{ maxWidth: 220, height: '42px' }}>
+                <Search className="topbar-search-icon" size={16} />
+                <input 
+                  className="topbar-search-input" 
+                  style={{ height: '100%', borderRadius: '12px' }}
+                  placeholder="Search regs..."
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)} 
+                />
+              </div>
+              
+              {user?.role !== 'coordinator' && (
+                <div style={{ position: 'relative', height: '42px' }}>
+                  <select
+                    className="form-input"
+                    value={filterEvent}
+                    onChange={e => setFilterEvent(e.target.value)}
+                    style={{ 
+                      paddingRight: '2.5rem', appearance: 'none', background: 'var(--surface-hover)', 
+                      minWidth: 160, height: '100%', borderRadius: '12px', border: '1px solid var(--border)' 
+                    }}
+                  >
+                    <option value="">All Events</option>
+                    {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+                  </select>
+                  <ChevronDown size={14} style={{ position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-dim)' }} />
+                </div>
+              )}
+
+              <button className="btn btn-primary" style={{ padding: '0.65rem 1.25rem', background: 'var(--primary)', height: '42px' }}
+                onClick={() => {
+                  const eventName = events.find(e => e.id === filterEvent)?.name || 'All';
+                  const safeName = eventName.replace(/[^a-z0-9]/gi, '_');
+                  adminAPI.downloadRegistrations(filterEvent || undefined, `ECMEET26_${safeName}_reg.xlsx`);
+                }}>
+                <Download size={16} />
+                Export
+              </button>
+            </div>
+          </div>
+
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            paddingTop: '1.25rem',
+            borderTop: '1px solid var(--border-light)'
+          }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <EmberDropdown 
+                value={filters.team}
+                onChange={val => setFilters(prev => ({ ...prev, team: val }))}
+                options={[
+                  { value: 'all', label: 'All Houses' },
+                  { value: 'Gryffindor', label: 'Gryffindor' },
+                  { value: 'Ravenclaw', label: 'Ravenclaw' },
+                  { value: 'Slytherin', label: 'Slytherin' },
+                  { value: 'Hufflepuff', label: 'Hufflepuff' }
+                ]}
+                disabled={user?.role === 'captain'}
+              />
+
+              <EmberDropdown 
+                value={filters.year}
+                onChange={val => setFilters(prev => ({ ...prev, year: val }))}
+                options={[
+                  { value: 'all', label: 'All Depts' },
+                  ...CLASSES.map(c => ({ value: c, label: c }))
+                ]}
+              />
+
+              <EmberDropdown 
+                value={filters.section}
+                onChange={val => setFilters(prev => ({ ...prev, section: val }))}
+                options={[
+                  { value: 'all', label: 'All Sections' },
+                  ...SECTIONS.map(s => ({ value: s, label: `Section ${s}` }))
+                ]}
               />
             </div>
-            
-            {user?.role !== 'coordinator' && (
-              <div style={{ position: 'relative' }}>
-                <select
-                  className="form-input"
-                  value={filterEvent}
-                  onChange={e => setFilterEvent(e.target.value)}
-                  style={{ paddingRight: '2.5rem', appearance: 'none', background: 'var(--surface)', minWidth: 160 }}
-                >
-                  <option value="">All Events</option>
-                  {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-dim)' }} />
-              </div>
-            )}
 
-            <button className="btn btn-primary" style={{ padding: '0.6rem 1rem' }}
-              onClick={() => {
-                const eventName = events.find(e => e.id === filterEvent)?.name || 'All';
-                const safeName = eventName.replace(/[^a-z0-9]/gi, '_');
-                adminAPI.downloadRegistrations(filterEvent || undefined, `ECMEET26_${safeName}_reg.xlsx`);
-              }}>
-              <Download size={16} />
-              Export
-            </button>
-          </div>
-        </div>
-
-        {/* ─── ENHANCED FILTER BAR ─── */}
-        <div className="table-filters" style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: '0.75rem', 
-          alignItems: 'center', 
-          padding: '0 1.5rem 1.25rem 1.5rem',
-          marginTop: '-0.5rem'
-        }}>
-          <EmberDropdown 
-            value={filters.team}
-            onChange={val => setFilters(prev => ({ ...prev, team: val }))}
-            options={[
-              { value: 'all', label: 'All Houses' },
-              { value: 'Gryffindor', label: 'Gryffindor' },
-              { value: 'Ravenclaw', label: 'Ravenclaw' },
-              { value: 'Slytherin', label: 'Slytherin' },
-              { value: 'Hufflepuff', label: 'Hufflepuff' }
-            ]}
-            disabled={user?.role === 'captain'}
-          />
-
-          <EmberDropdown 
-            value={filters.year}
-            onChange={val => setFilters(prev => ({ ...prev, year: val }))}
-            options={[
-              { value: 'all', label: 'All Depts' },
-              ...CLASSES.map(c => ({ value: c, label: c }))
-            ]}
-          />
-
-          <EmberDropdown 
-            value={filters.section}
-            onChange={val => setFilters(prev => ({ ...prev, section: val }))}
-            options={[
-              { value: 'all', label: 'All Sections' },
-              ...SECTIONS.map(s => ({ value: s, label: `Section ${s}` }))
-            ]}
-          />
-
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort Order</span>
-            <EmberDropdown 
-              value={filters.sortBy} 
-              onChange={val => setFilters(prev => ({ ...prev, sortBy: val }))}
-              options={[
-                { value: 'recent', label: 'Sort by Recent' },
-                { value: 'name', label: 'Sort by Name' },
-                { value: 'rrn', label: 'Sort by RRN' },
-                { value: 'team', label: 'Sort by House' }
-              ]}
-              accent
-            />
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <span style={{ 
+                fontSize: '0.7rem', 
+                fontWeight: 800, 
+                color: 'var(--text-dim)', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.1em' 
+              }}>Sort Order</span>
+              <EmberDropdown 
+                value={filters.sortBy} 
+                onChange={val => setFilters(prev => ({ ...prev, sortBy: val }))}
+                options={[
+                  { value: 'recent', label: 'Sort by Recent' },
+                  { value: 'name', label: 'Sort by Name' },
+                  { value: 'rrn', label: 'Sort by RRN' },
+                  { value: 'team', label: 'Sort by House' }
+                ]}
+                accent
+              />
+            </div>
           </div>
         </div>
 
