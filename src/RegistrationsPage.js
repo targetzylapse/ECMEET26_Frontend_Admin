@@ -72,7 +72,7 @@ export default function RegistrationsPage() {
     const matchesTeam = filters.team === 'all' || r.team === filters.team;
 
     // Dept/Year filter
-    const matchesYear = filters.year === 'all' || r.department === filters.year;
+    const matchesYear = filters.year === 'all' || r.department?.includes(filters.year.split(' ')[0]);
 
     // Section filter
     const matchesSection = filters.section === 'all' || r.section === filters.section;
@@ -158,8 +158,15 @@ export default function RegistrationsPage() {
           </div>
         </div>
 
-        {/* ─── 4 SORTING / FILTERING OPTIONS ─── */}
-        <div className="table-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', padding: '0 1.5rem 1.5rem 1.5rem' }}>
+        {/* ─── ENHANCED FILTER BAR ─── */}
+        <div className="table-filters" style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '0.75rem', 
+          alignItems: 'center', 
+          padding: '0 1.5rem 1.25rem 1.5rem',
+          marginTop: '-0.5rem'
+        }}>
           <EmberDropdown 
             value={filters.team}
             onChange={val => setFilters(prev => ({ ...prev, team: val }))}
@@ -178,8 +185,8 @@ export default function RegistrationsPage() {
             onChange={val => setFilters(prev => ({ ...prev, year: val }))}
             options={[
               { value: 'all', label: 'All Depts' },
-              ...CLASSES.map(c => ({ value: c.split(' ')[0], label: c.split(' ')[0] }))
-            ].filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
+              ...CLASSES.map(c => ({ value: c, label: c }))
+            ]}
           />
 
           <EmberDropdown 
@@ -191,17 +198,20 @@ export default function RegistrationsPage() {
             ]}
           />
 
-          <EmberDropdown 
-            value={filters.sortBy} 
-            onChange={val => setFilters(prev => ({ ...prev, sortBy: val }))}
-            options={[
-              { value: 'recent', label: 'Sort by Recent' },
-              { value: 'name', label: 'Sort by Name' },
-              { value: 'rrn', label: 'Sort by RRN' },
-              { value: 'team', label: 'Sort by House' }
-            ]}
-            accent
-          />
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort Order</span>
+            <EmberDropdown 
+              value={filters.sortBy} 
+              onChange={val => setFilters(prev => ({ ...prev, sortBy: val }))}
+              options={[
+                { value: 'recent', label: 'Sort by Recent' },
+                { value: 'name', label: 'Sort by Name' },
+                { value: 'rrn', label: 'Sort by RRN' },
+                { value: 'team', label: 'Sort by House' }
+              ]}
+              accent
+            />
+          </div>
         </div>
 
         {loading ? (
