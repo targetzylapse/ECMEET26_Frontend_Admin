@@ -128,7 +128,24 @@ export default function UsersPage({ mode = 'students' }) {
       <div className="card table-card">
         <div className="table-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 className="table-title">{mode === 'students' ? 'Students Details' : 'Users'}</h3>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <h3 className="table-title" style={{ margin: 0 }}>{mode === 'students' ? 'Students Details' : 'Users'}</h3>
+              {!loading && (
+                <div style={{ 
+                  background: 'rgba(59, 130, 246, 0.1)', 
+                  color: '#3b82f6', 
+                  padding: '0.25rem 0.75rem', 
+                  borderRadius: '20px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 700,
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  letterSpacing: '0.02em',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {users.length} Total
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button className="btn btn-outline" style={{ padding: '0.6rem 1rem', gap: '0.5rem' }} onClick={() => load(true)} disabled={loading}>
                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
