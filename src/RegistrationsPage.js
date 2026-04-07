@@ -56,7 +56,7 @@ export default function RegistrationsPage() {
     adminAPI.getUsers({ mode: 'students' }).then(r => {
       const map = {};
       (r.data.users || []).forEach(u => {
-        if (u.rrn) map[u.rrn] = { year: u.year };
+        if (u.rrn) map[u.rrn] = { year: u.year, department: u.department };
       });
       setStudentsMap(map);
     }).catch(() => {});
@@ -86,11 +86,26 @@ export default function RegistrationsPage() {
     // Dept/Year filter
     const student = studentsMap[r.rrn];
     const studentYear = student?.year || '';
-    const fullClass = `${r.department} ${studentYear}`.trim();
+    const studentDept = student?.department || r.department || '';
     
-    const matchesYear = filters.year === 'all' || 
-      (filters.year.includes(r.department) && (filters.year.includes(studentYear) || !studentYear));
-
+    let matchesYear = false;
+    if (filters.year === 'all') {
+      matchesYear = true;
+    } else {
+      const parts = filters.year.split(' ');
+      const filterDept = parts[0] || '';
+      const filterYr = parts[1] || '';
+      
+      const deptMatches = studentDept.toLowerCase().includes(filterDept.toLowerCase());
+      const yearMatches = studentYear.toLowerCase().includes(filterYr.toLowerCase());
+      
+      matchesYear = deptMatches && yearMatches;
+      
+      // DEBUG: Log when there's a partial match that fails (so user can debug)
+      if (!matchesYear && (deptMatches || yearMatches)) {
+        console.log(`[Sort Debug] RRN: ${r.rrn} -> Data: [Dept: "${studentDept}", Year: "${studentYear}"] | Filter: [Dept: "${filterDept}", Year: "${filterYr}"] | DeptMatch: ${deptMatches}, YearMatch: ${yearMatches}`);
+      }
+    }
     // Section filter
     const matchesSection = filters.section === 'all' || r.section === filters.section;
 
