@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   ClipboardList, 
@@ -11,6 +11,15 @@ import {
 } from 'lucide-react';
 import { adminAPI, eventsAPI } from './api';
 import { AdminAuthContext } from './App';
+
+const CLASSES = [
+  "AI&DS 2nd YEAR", "AI&DS 3rd YEAR",
+  "IOT 2nd YEAR", "IOT 3rd YEAR",
+  "CSE 3rd YEAR", "CSE 2nd YEAR",
+  "CYBER 3rd YEAR", "CYBER 2nd YEAR"
+];
+
+const SECTIONS = ["A", "B", "C", "D"];
 
 export default function RegistrationsPage() {
   const { user } = useContext(AdminAuthContext);
@@ -277,15 +286,6 @@ export default function RegistrationsPage() {
     </div>
   );
 }
-
-const CLASSES = [
-  "AI&DS 2nd YEAR", "AI&DS 3rd YEAR",
-  "IOT 2nd YEAR", "IOT 3rd YEAR",
-  "CSE 3rd YEAR", "CSE 2nd YEAR",
-  "CYBER 3rd YEAR", "CYBER 2nd YEAR"
-];
-
-const SECTIONS = ["A", "B", "C", "D"];
 
 function EmberDropdown({ value, onChange, options, disabled, accent }) {
   const [isOpen, setIsOpen] = useState(false);
