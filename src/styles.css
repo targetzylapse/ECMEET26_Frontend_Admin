@@ -768,6 +768,22 @@ tr:last-child td {
     gap: 1rem;
   }
 
+  .responsive-filter-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .responsive-filter-group {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .responsive-topbar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .topbar-actions .topbar-divider {
     display: none;
   }
