@@ -38,6 +38,8 @@ export default function RegistrationsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [studentsMap, setStudentsMap] = useState({});
+  const [groupByStudent, setGroupByStudent] = useState(false);
+  const [expandedRrn, setExpandedRrn] = useState({});
 
   const load = (forceRefresh = false) => {
     setLoading(true);
@@ -129,7 +131,7 @@ export default function RegistrationsPage() {
       <div className="card table-card">
         <div className="table-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem', padding: '1.75rem 2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <h3 className="table-title" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Event Registrations</h3>
               {!loading && (
                 <div style={{ 
@@ -149,7 +151,7 @@ export default function RegistrationsPage() {
               )}
             </div>
 
-            <div className="table-actions" style={{ gap: '0.75rem' }}>
+            <div className="table-actions responsive-topbar-actions" style={{ gap: '0.75rem' }}>
               <button className="btn btn-outline" style={{ padding: '0.65rem 1.25rem', height: '42px' }} onClick={() => load(true)} disabled={loading}>
                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                 Refresh
@@ -196,14 +198,14 @@ export default function RegistrationsPage() {
             </div>
           </div>
 
-          <div style={{ 
+          <div className="responsive-filter-row" style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
             paddingTop: '1.25rem',
             borderTop: '1px solid var(--border-light)'
           }}>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="responsive-filter-group" style={{ display: 'flex' }}>
               <EmberDropdown 
                 value={filters.team}
                 onChange={val => setFilters(prev => ({ ...prev, team: val }))}
@@ -236,7 +238,17 @@ export default function RegistrationsPage() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-dim)', fontWeight: 600, marginRight: '1rem' }}>
+                <input 
+                    type="checkbox" 
+                    checked={groupByStudent} 
+                    onChange={e => setGroupByStudent(e.target.checked)} 
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                />
+                Group by Student
+              </label>
+
               <span style={{ 
                 fontSize: '0.7rem', 
                 fontWeight: 800, 
@@ -265,23 +277,39 @@ export default function RegistrationsPage() {
           <div className="empty-state" style={{ padding: '5rem' }}>No registrations found for this selection.</div>
         ) : (
           <div className="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Student</th>
-                  <th>RRN</th>
-                  <th>House</th>
-                  <th style={{ minWidth: '150px' }}>Dept / Sec</th>
-                  <th>Contact</th>
-                  <th style={{ minWidth: '120px' }}>Event Name</th>
-                  <th>Registered</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r, i) => (
-                  <tr key={r._id}>
+            {(() => {
+              let displayData = filtered;
+              if (groupByStudent) {
+                const grouped = {};
+                filtered.forEach(r => {
+                  const key = r.rrn || r.email || `unknown_${r._id}`;
+                  if (!grouped[key]) {
+                    grouped[key] = { ...r, eventNames: [r.eventName], eventCount: 1, _id: key };
+                  } else {
+                    grouped[key].eventNames.push(r.eventName);
+                    grouped[key].eventCount += 1;
+                  }
+                });
+                displayData = Object.values(grouped);
+              }
+              return (
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th>RRN</th>
+                    <th>House</th>
+                    <th style={{ minWidth: '150px' }}>Dept / Sec</th>
+                    <th>Contact</th>
+                    <th style={{ minWidth: '120px' }}>Event Name</th>
+                    <th>Registered</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayData.map((r, i) => (
+                    <tr key={r._id}>
                     <td style={{ fontSize: '0.75rem', color: 'var(--text-dim)', width: '40px' }}>{i + 1}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -315,10 +343,29 @@ export default function RegistrationsPage() {
                       {r.department || '—'} / {r.section || '—'}
                     </td>
                     <td style={{ fontSize: '0.8rem', fontVariantNumeric: 'tabular-nums' }}>{r.contactNumber || '—'}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <span className="badge badge-blue" style={{ fontSize: '0.7rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
-                        {r.eventName}
-                      </span>
+                    <td style={{ whiteSpace: 'normal', minWidth: '200px' }}>
+                      {groupByStudent && r.eventCount > 1 ? (
+                        <div>
+                          <button 
+                            onClick={() => setExpandedRrn(prev => ({...prev, [r.rrn || r.email]: !prev[r.rrn || r.email]}))}
+                            className="badge badge-blue" 
+                            style={{ cursor: 'pointer', fontSize: '0.7rem', letterSpacing: '0.02em', border: 'none' }}
+                          >
+                            {r.eventCount} Events Registered (Click to {expandedRrn[r.rrn || r.email] ? 'Hide' : 'View'})
+                          </button>
+                          {expandedRrn[r.rrn || r.email] && (
+                            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
+                              {r.eventNames.map((en, idx) => (
+                                <span key={idx} className="badge badge-blue" style={{ fontSize: '0.65rem', whiteSpace: 'nowrap' }}>{en}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="badge badge-blue" style={{ fontSize: '0.7rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+                          {r.eventName || (r.eventNames && r.eventNames[0])}
+                        </span>
+                      )}
                     </td>
                     <td style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
                       {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -332,9 +379,11 @@ export default function RegistrationsPage() {
                       </span>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+              );
+            })()}
           </div>
         )}
       </div>
