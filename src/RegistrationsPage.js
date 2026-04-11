@@ -7,7 +7,9 @@ import {
   Download, 
   MoreVertical,
   ChevronDown,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { adminAPI, eventsAPI } from './api';
 import { AdminAuthContext } from './App';
@@ -126,11 +128,26 @@ export default function RegistrationsPage() {
     }
   });
 
+  let displayData = filtered;
+  if (groupByStudent) {
+    const grouped = {};
+    filtered.forEach(r => {
+      const key = r.rrn || r.email || `unknown_${r._id}`;
+      if (!grouped[key]) {
+        grouped[key] = { ...r, eventNames: [r.eventName], eventCount: 1, _id: key };
+      } else {
+        grouped[key].eventNames.push(r.eventName);
+        grouped[key].eventCount += 1;
+      }
+    });
+    displayData = Object.values(grouped);
+  }
+
   return (
     <div className="fade-in">
       <div className="card table-card">
         <div className="table-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem', padding: '1.75rem 2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <h3 className="table-title" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Event Registrations</h3>
               {!loading && (
@@ -146,7 +163,7 @@ export default function RegistrationsPage() {
                   letterSpacing: '0.05em',
                   boxShadow: '0 4px 12px rgba(59, 130, 246, 0.08)'
                 }}>
-                  {filtered.length} Total
+                  {displayData.length} Total
                 </div>
               )}
             </div>
@@ -277,22 +294,6 @@ export default function RegistrationsPage() {
           <div className="empty-state" style={{ padding: '5rem' }}>No registrations found for this selection.</div>
         ) : (
           <div className="table-responsive">
-            {(() => {
-              let displayData = filtered;
-              if (groupByStudent) {
-                const grouped = {};
-                filtered.forEach(r => {
-                  const key = r.rrn || r.email || `unknown_${r._id}`;
-                  if (!grouped[key]) {
-                    grouped[key] = { ...r, eventNames: [r.eventName], eventCount: 1, _id: key };
-                  } else {
-                    grouped[key].eventNames.push(r.eventName);
-                    grouped[key].eventCount += 1;
-                  }
-                });
-                displayData = Object.values(grouped);
-              }
-              return (
               <table>
                 <thead>
                   <tr>
@@ -349,9 +350,10 @@ export default function RegistrationsPage() {
                           <button 
                             onClick={() => setExpandedRrn(prev => ({...prev, [r.rrn || r.email]: !prev[r.rrn || r.email]}))}
                             className="badge badge-blue" 
-                            style={{ cursor: 'pointer', fontSize: '0.7rem', letterSpacing: '0.02em', border: 'none' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.7rem', letterSpacing: '0.02em', border: 'none' }}
                           >
-                            {r.eventCount} Events Registered (Click to {expandedRrn[r.rrn || r.email] ? 'Hide' : 'View'})
+                            <span>{r.eventCount} Events Registered</span>
+                            {expandedRrn[r.rrn || r.email] ? <EyeOff size={14} /> : <Eye size={14} />}
                           </button>
                           {expandedRrn[r.rrn || r.email] && (
                             <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
@@ -382,8 +384,6 @@ export default function RegistrationsPage() {
                   ))}
                 </tbody>
               </table>
-              );
-            })()}
           </div>
         )}
       </div>
