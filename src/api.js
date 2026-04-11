@@ -24,7 +24,7 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  googleLogin: (credential) => api.post('/auth/google', { credential }),
+  googleLogin: (credential) => api.post('/auth/google', { credential, source: 'admin' }),
   logout: () => api.post('/auth/logout'),
   verify: () => api.get('/auth/verify')
 };
