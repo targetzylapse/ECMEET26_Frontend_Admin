@@ -35,9 +35,9 @@ export default function LoginPage() {
           window.google.accounts.id.renderButton(googleBtnRef.current, {
             theme: 'filled_black',
             size: 'large',
-            shape: 'pill',
-            width: googleBtnRef.current.offsetWidth || 390,
-            logo_alignment: 'left'
+            shape: 'rectangular',
+            width: googleBtnRef.current.offsetWidth || 350,
+            logo_alignment: 'center'
           });
         }
 
@@ -104,67 +104,66 @@ export default function LoginPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'radial-gradient(circle at top left, var(--background-login-accent, #1a1a1a), #0a0a0a)',
+      background: '#000000',
       padding: '1.5rem',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      fontFamily: '"Inter", "DM Sans", sans-serif'
     }}>
-      {/* Abstract Background Shapes */}
-      <div style={{ position: 'absolute', top: '10%', left: '5%', width: '30vw', height: '30vw', background: 'var(--primary)', filter: 'blur(120px)', opacity: 0.1, borderRadius: '50%' }}></div>
-      <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: '25vw', height: '25vw', background: 'var(--secondary)', filter: 'blur(100px)', opacity: 0.08, borderRadius: '50%' }}></div>
-
       <div className="card login-card fade-in" style={{
-        maxWidth: 440,
+        maxWidth: 400,
         width: '100%',
         padding: '3rem 2.5rem',
         textAlign: 'center',
-        background: 'rgba(255, 255, 255, 0.03)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        background: '#0a0a0a',
+        border: '1px solid #222222',
+        borderRadius: '12px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 1)',
         position: 'relative',
         zIndex: 1
       }}>
         <div style={{ marginBottom: '2.5rem' }}>
           <div style={{ 
-            width: 64, height: 64, borderRadius: 16, 
-            background: 'var(--primary-gradient)', display: 'flex', 
+            width: 56, height: 56, borderRadius: '50%', 
+            background: '#ffffff', display: 'flex', 
             alignItems: 'center', justifyContent: 'center', 
-            margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-lg)'
+            margin: '0 auto 1.5rem', boxShadow: '0 4px 14px 0 rgba(255,255,255,0.1)'
           }}>
-            <ShieldCheck size={32} color="white" />
+            <Lock size={24} color="#000000" />
           </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem', color: 'white' }}>
-            ECMEET<span style={{ color: 'var(--primary)' }}>'26</span>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.02em', margin: 0, color: '#ffffff' }}>
+            ECMEET'26
           </h1>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>
-            Internal Management System
-          </p>
         </div>
 
         {error && (
           <div style={{ 
-            background: 'rgba(244, 63, 94, 0.1)', 
-            border: '1px solid rgba(244, 63, 94, 0.2)', 
-            color: '#f43f5e', padding: '1rem', 
-            borderRadius: 12, fontSize: '0.85rem', 
+            background: '#1a1a1a', 
+            border: '1px solid #333333', 
+            color: '#ffffff', padding: '0.85rem 1rem', 
+            borderRadius: '6px', fontSize: '0.85rem', 
             marginBottom: '1.5rem', textAlign: 'left',
             display: 'flex', gap: '0.75rem', alignItems: 'flex-start'
           }}>
-            <Lock size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+            <Lock size={16} style={{ flexShrink: 0, marginTop: '0.1rem', color: '#888' }} />
             <span>{error}</span>
           </div>
         )}
 
         <div style={{ 
-          marginBottom: '2rem', 
+          marginBottom: '1rem', 
           display: 'flex', 
           justifyContent: 'center',
           minHeight: '44px' 
         }}>
           {loading ? (
-            <button className="btn btn-primary" disabled style={{ width: '100%', borderRadius: 12 }}>
-              <Loader2 className="animate-spin" size={20} />
+            <button disabled style={{ 
+              width: '100%', borderRadius: '4px', background: '#ffffff', color: '#000000', 
+              border: 'none', padding: '0.75rem', display: 'flex', justifyContent: 'center', 
+              alignItems: 'center', gap: '0.5rem', fontWeight: 500, fontSize: '0.95rem',
+              cursor: 'not-allowed'
+            }}>
+              <Loader2 className="animate-spin" size={18} />
               Authenticating...
             </button>
           ) : (
