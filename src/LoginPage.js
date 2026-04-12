@@ -17,13 +17,33 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [googleReady, setGoogleReady] = useState(false);
+
   useEffect(() => {
-    if (!window.google || !GOOGLE_CLIENT_ID) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogle,
-      ux_mode: 'popup'
-    });
+    let interval;
+    const initGoogle = () => {
+      if (window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogle,
+          ux_mode: 'popup'
+        });
+        setGoogleReady(true);
+        if (interval) clearInterval(interval);
+        return true;
+      }
+      return false;
+    };
+
+    // Try immediate initialization
+    if (!initGoogle()) {
+      // If not ready, poll until it is
+      interval = setInterval(initGoogle, 100);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   const handleGoogle = async (response) => {
@@ -48,7 +68,26 @@ export default function LoginPage() {
       setError('System configuration error: Authentication service is unavailable.'); 
       return; 
     }
-    window.google?.accounts.id.prompt();
+
+    if (!googleReady) {
+      setError('Authentication service is still loading. Please wait a moment...');
+      return;
+    }
+
+    try {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+          console.warn('Google prompt not displayed:', notification.getNotDisplayedReason());
+          // If One Tap is suppressed, let the user know or suggest refreshing
+          if (notification.getNotDisplayedReason() === 'skipped_by_user') {
+            setError('Google sign-in was recently dismissed. Please refresh or wait a moment.');
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Sign-in trigger error:', err);
+      setError('Could not start sign-in process. Please refresh the page.');
+    }
   };
 
   return (
