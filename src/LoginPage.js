@@ -69,37 +69,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleSignIn = () => {
-    if (!GOOGLE_CLIENT_ID) { 
-      setError('System configuration error: Authentication service is unavailable.'); 
-      return; 
-    }
-    if (!googleReady) {
-      setError('Authentication service is still loading. Please wait a moment...');
-      return;
-    }
-
-    const realBtn = googleBtnRef.current?.querySelector('div[role=button]');
-    if (realBtn) {
-      realBtn.click();
-      return;
-    }
-
-    try {
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed()) {
-          console.warn('Google prompt not displayed:', notification.getNotDisplayedReason());
-          if (notification.getNotDisplayedReason() === 'skipped_by_user') {
-            setError('Google sign-in was recently dismissed. Please refresh or wait a moment.');
-          }
-        }
-      });
-    } catch (err) {
-      console.error('Sign-in trigger error:', err);
-      setError('Could not start sign-in process. Please refresh the page.');
-    }
-  };
-
   return (
     <div className="login-page" style={{
       minHeight: '100vh',
@@ -158,14 +127,12 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div style={{ marginBottom: '2rem', position: 'relative' }}>
-          <div ref={googleBtnRef} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
+        <div style={{ marginBottom: '2rem', position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
           <button
-            onClick={handleSignIn}
             disabled={loading}
             className="btn btn-primary"
             style={{
-              width: '100%', padding: '1rem', 
+              width: '100%', padding: '1rem', margin: 0,
               fontSize: '1rem', fontWeight: 600,
               gap: '0.75rem', borderRadius: 12,
               boxShadow: '0 10px 15px -3px rgba(244, 63, 94, 0.3)'
@@ -183,6 +150,16 @@ export default function LoginPage() {
             )}
             {loading ? 'Authenticating...' : 'Sign in with Google'}
           </button>
+          
+          <div style={{ 
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+            opacity: (!loading && googleReady) ? 0.01 : 0, 
+            zIndex: 10, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: (!loading && googleReady) ? 'auto' : 'none'
+          }}>
+            <div ref={googleBtnRef} style={{ transform: 'scale(4)' }} />
+          </div>
         </div>
 
       </div>
